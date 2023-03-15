@@ -1,0 +1,234 @@
+﻿<style>
+    .blazorise-calendar {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .month-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .month-view .month-body .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: clip;
+    }
+
+        .month-view .month-body .calendar-day.btn.text-muted {
+            color: darkgray !important;
+        }
+
+            .month-view .month-body .calendar-day.btn.text-muted.selected-date {
+                color: #fff !important;
+            }
+
+            .month-view .month-body .calendar-day.btn.text-muted:not(.selected-date):hover {
+                color: #000 !important;
+            }
+
+        .month-view .month-body .calendar-day:not(.selected-date):hover {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+    .blazorise-calendar .header {
+        min-width: 280px;
+    }
+
+    .year-view .year-body,
+    .decade-view .decade-body {
+        min-height: 280px;
+    }
+
+    .year-view .month-selector,
+    .decade-view .year-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0px 0px;
+        grid-auto-flow: row;
+        grid-template-areas:
+            ". . . ."
+            ". . . ."
+            ". . . .";
+    }
+
+        .year-view .month-selector .month,
+        .decade-view .year-selector .year {
+            aspect-ratio: 1;
+        }
+</style>
+
+<Div Class="blazorise-calendar" Padding="Padding.Is2">
+    <Card>
+        <CardBody>
+            <Div Class="decade-view"
+                 Display="CurrentView == CalendarView.Decade ? Display.Always : Display.None">
+                <Div Class="header"
+                     Flex="Flex.JustifyContent.Between"
+                     Margin="Margin.Is3.FromBottom">
+                    <Button TextWeight="TextWeight.Bold" Padding="Padding.Is1">@($"{RoundByX(CurrentViewDate.Year)} - {RoundByX(CurrentViewDate.Year + 10)}")</Button>
+                    <Div>
+                        <Button Clicked="() => DecrementYear(10)"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronLeft"></Icon>
+                        </Button>
+                        <Button Clicked="() => SetMonthView(DateTime.Today)"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Primary"
+                                Size="Size.Small">
+                            Today
+                        </Button>
+                        <Button Clicked="() => IncrementYear(10)"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronRight"></Icon>
+                        </Button>
+                    </Div>
+                </Div>
+                <Div Class="decade-body">
+                    <Div Class="year-selector">
+                        <Repeater Items="Enumerable.Range(RoundByX(CurrentViewDate.Year), 10)" Context="year">
+                            @{
+                                var date = DateTime.Parse($"{year}-{CurrentViewDate.Month:D2}-01");
+                            }
+                            <Button Class="year"
+                                    Border="CurrentViewDate.Year == year ? Border.Is1 : Border.Is0"
+                                    Color="DateTime.Today.Year == year ? Color.Primary : Color.Secondary"
+                                    Outline="DateTime.Today.Year != year"
+                                    Padding="Padding.Is1"
+                                    Disabled="@(MinDate > date.AddYears(1) || MaxDate < date)"
+                                    Clicked="() => NavigateTo(date, CalendarView.Year)">
+                                @date.ToString("yyyy")
+                            </Button>
+                        </Repeater>
+                    </Div>
+                </Div>
+            </Div>
+            <Div Class="year-view"
+                 Display="CurrentView == CalendarView.Year ? Display.Always : Display.None">
+                <Div Class="header"
+                     Flex="Flex.JustifyContent.Between"
+                     Margin="Margin.Is3.FromBottom">
+                    <Button TextWeight="TextWeight.Bold"
+                            Padding="Padding.Is1"
+                            Clicked="() => CurrentView = CalendarView.Decade">
+                        @CurrentViewDate.ToString("yyyy")
+                    </Button>
+                    <Div>
+                        <Button Clicked="() => DecrementYear()"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronLeft"></Icon>
+                        </Button>
+                        <Button Clicked="() => SetMonthView(DateTime.Today)"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Primary"
+                                Size="Size.Small">
+                            Today
+                        </Button>
+                        <Button Clicked="() => IncrementYear()"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronRight"></Icon>
+                        </Button>
+                    </Div>
+                </Div>
+                <Div Class="year-body">
+                    <Div Class="month-selector">
+                        <Repeater Items="Enumerable.Range(1, 12)" Context="month">
+                            @{
+                                var date = DateTime.Parse($"{CurrentViewDate.Year}-{month:D2}-01");
+                                var startOfThisMonth = DateTime.Parse($"{DateTime.Today.Year}-{DateTime.Today.Month:D2}-01");
+                            }
+                            <Button Class="month"
+                                    Border="startOfThisMonth == date ? Border.Is1 : Border.Is0"
+                                    Color="startOfThisMonth == date ? Color.Primary : Color.Secondary"
+                                    Outline="startOfThisMonth != date"
+                                    Padding="Padding.Is1"
+                                    Disabled="@(MinDate > date.AddMonths(1).AddDays(-1) || MaxDate < date)"
+                                    Clicked="() => SetMonthView(date)">
+                                @date.ToString("MMM")
+                            </Button>
+                        </Repeater>
+                    </Div>
+                </Div>
+            </Div>
+            <Div Class="month-view"
+                 Display="CurrentView == CalendarView.Month ? Display.Always : Display.None">
+                <Div Class="header"
+                     Flex="Flex.JustifyContent.Between"
+                     Margin="Margin.Is4.FromBottom">
+                    <Button Padding="Padding.Is1"
+                            TextWeight="TextWeight.Bold"
+                            Clicked="() => CurrentView = CalendarView.Year">
+                        @CurrentViewDate.ToString("MMMM yyyy")
+                    </Button>
+                    <Div>
+                        <Button Clicked="DecrementMonth"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Disabled="!DecrementMonthEnabled()"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronLeft"></Icon>
+                        </Button>
+                        <Button Clicked="() => SetMonthView(DateTime.Today)"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Primary"
+                                Size="Size.Small">Today</Button>
+                        <Button Clicked="IncrementMonth"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                TextColor="TextColor.Dark"
+                                Color="Color.Light"
+                                Disabled="!IncrementMonthEnabled()"
+                                Outline>
+                            <Icon Name="BootstrapIcons.ChevronRight"></Icon>
+                        </Button>
+                    </Div>
+                </Div>
+                <Div Class="month-body">
+                    <Repeater TItem="DayOfWeek"
+                              Items="Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>()"
+                              Context="dayOfWeek">
+                        <Div Class="calendar-dow"
+                             Margin="Margin.Is2.FromBottom"
+                             TextColor="TextColor.Muted"
+                             TextAlignment="TextAlignment.Center"
+                             TextTransform="TextTransform.Uppercase">
+                            @dayOfWeek.ToString().First()
+                        </Div>
+                    </Repeater>
+                    <Repeater Items="DatesInMonth" Context="date">
+                        <Button Class="@(SelectedDate.Equals(date.Date) || SelectedDates.Contains(date.Date) ? "calendar-day selected-date" : "calendar-day")"
+                                Color="SelectedDate.Equals(date.Date) || SelectedDates.Contains(date.Date) ? Color.Primary : Color.Default"
+                                TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
+                                Size="Size.Small"
+                                Border="Border.Is0"
+                                Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
+                                Clicked="() => SelectedDate = date.Date">@date.Day</Button>
+                    </Repeater>
+                </Div>
+            </Div>
+        </CardBody>
+    </Card>
+</Div>

@@ -1,3 +1,9 @@
 ﻿@page "/"
 
-<h1>Hello, world!</h1>
+<Container Flex="Flex.JustifyContent.Center.AlignItems.Center" Class="vw-100 vh-100">
+    <Calendar @bind-SelectedDate="SelectedDate" />
+</Container>
+
+@code {
+    public DateTime SelectedDate { get; set; } = DateTime.Today;
+}
