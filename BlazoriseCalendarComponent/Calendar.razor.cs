@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BlazoriseCalendarComponent
 {
@@ -183,6 +184,13 @@ namespace BlazoriseCalendarComponent
             StateHasChanged();
         }
 
+        protected void DateClicked(DateTime dateTime)
+        {
+            SelectedDate = dateTime;
+            CurrentViewDate = SelectedDate;
+            SetDatesInView(selectedDate);
+        }
+
         private void SetDatesInView(DateTime dateTime)
         {
             var datesInMonth = Enumerable.Range(1, DateTime.DaysInMonth(dateTime.Year, dateTime.Month))
@@ -192,8 +200,13 @@ namespace BlazoriseCalendarComponent
             var prevDays = Enumerable.Range(1, firstDayOfMonth - 1).Select(d => new DateTime(datesInMonth.Min().AddDays(d - firstDayOfMonth).Ticks));
             var postDays = Enumerable.Range(1, 42 - datesInMonth.Count - prevDays.Count())
                                      .Select(d => new DateTime(datesInMonth.Max().AddDays(d).Ticks));
-            
-            DatesInView = prevDays.Concat(datesInMonth).Concat(postDays).ToList();
+
+            var datesToSet = prevDays.Concat(datesInMonth).Concat(postDays).ToList();
+
+            if (!DatesInView.SequenceEqual(datesToSet))
+            {
+                DatesInView = datesToSet;
+            }
         }
 
         private string DateClass(DateTime date)

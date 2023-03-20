@@ -225,9 +225,7 @@
                         </Div>
                     </Repeater>
                     <Repeater Items="Enumerable.Range(0, 42)" Context="i">
-                        @{
-                            var date = DatesInView.ElementAt(i);
-                        }
+                        @{ var date = DatesInView.ElementAt(i); }
                         <Button @ref="@buttonRefs[i]"
                                 Class="@DateClass(date)"
                                 Color="SelectedDate.Equals(date.Date) || SelectedDates.Contains(date.Date) ? Color.Primary : Color.Default"
@@ -235,7 +233,7 @@
                                 Size="Size.Small"
                                 Border="Border.Is0"
                                 Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
-                                Clicked="() => SelectedDate = date.Date"
+                                Clicked="() => DateClicked(date.Date)"
                                 TabIndex="DatesInView.IndexOf(date)"
                                 @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeydownAsync(args, date.Date)">
                             @date.Day
