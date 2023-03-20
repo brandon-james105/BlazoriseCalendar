@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Blazorise;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using System;
 using System.Collections.Generic;
@@ -67,7 +68,9 @@ namespace BlazoriseCalendarComponent
 
         private ISet<DateTime> SelectedDates { get; set; } = new HashSet<DateTime>();
 
-        private IList<DateTime> DatesInMonth { get; set; } = new List<DateTime>();
+        private IList<DateTime> DatesInView { get; set; } = new List<DateTime>();
+
+        private Dictionary<int, Button> buttonRefs = new();
 
         protected override void OnInitialized()
         {
@@ -78,32 +81,38 @@ namespace BlazoriseCalendarComponent
             base.OnInitialized();
         }
 
-        protected void SetMonthView(DateTime dateTime)
+        protected void SetMonthView(DateTime dateTime, bool select = false)
         {
-            SetMonthView(dateTime.Year, dateTime.Month);
+            NavigateTo(dateTime, CalendarView.Month, select);
         }
 
-        protected void SetMonthView(int year, int month)
+        protected void SetMonthView(int year, int month, bool select = false)
         {
-            NavigateTo(year, month, 1, CalendarView.Month);
+            NavigateTo(year, month, 1, CalendarView.Month, select);
         }
 
-        protected void NavigateTo(DateTime dateTime, CalendarView calendarView = CalendarView.Month)
+        protected void NavigateTo(DateTime dateTime, CalendarView calendarView = CalendarView.Month, bool select = false)
         {
-            NavigateTo(dateTime.Year, dateTime.Month, dateTime.Day);
+            NavigateTo(dateTime.Year, dateTime.Month, dateTime.Day, calendarView, select);
+        }
+
+        protected void NavigateTo(int year, int month, int day, CalendarView calendarView = CalendarView.Month, bool select = false)
+        {
             CurrentView = calendarView;
-        }
-
-        protected void NavigateTo(int year, int month, int day, CalendarView calendarView = CalendarView.Month)
-        {
             CurrentViewDate = new DateTime(year, month, day);
-            CalculateDateValues(CurrentViewDate);
-            CurrentView = calendarView;
+            SetDatesInView(CurrentViewDate);
+            
+            if (select)
+            {
+                SelectedDate = CurrentViewDate;
+            }
+
+            StateHasChanged();
         }
 
         protected void DecrementMonth()
         {
-            NavigateTo(CurrentViewDate.Month > 1 ? CurrentViewDate.Year : CurrentViewDate.Year - 1, CurrentViewDate.Month == 1 ? 12 : CurrentViewDate.Month - 1, 1);
+            NavigateTo(CurrentViewDate.AddMonths(-1));
         }
 
         protected bool DecrementMonthEnabled()
@@ -114,7 +123,7 @@ namespace BlazoriseCalendarComponent
 
         protected void IncrementMonth()
         {
-            NavigateTo(CurrentViewDate.Month < 12 ? CurrentViewDate.Year : CurrentViewDate.Year + 1, CurrentViewDate.Month == 12 ? 1 : CurrentViewDate.Month + 1, 1);
+            NavigateTo(CurrentViewDate.AddMonths(1));
         }
 
         protected bool IncrementMonthEnabled()
@@ -125,13 +134,13 @@ namespace BlazoriseCalendarComponent
         protected void DecrementYear(int years = 1)
         {
             CurrentViewDate = CurrentViewDate.AddYears(-1 * years);
-            CalculateDateValues(CurrentViewDate);
+            SetDatesInView(CurrentViewDate);
         }
 
         protected void IncrementYear(int years = 1)
         {
             CurrentViewDate = CurrentViewDate.AddYears(years);
-            CalculateDateValues(CurrentViewDate);
+            SetDatesInView(CurrentViewDate);
         }
 
         protected int RoundByX(int val, int x = 10)
@@ -139,7 +148,42 @@ namespace BlazoriseCalendarComponent
             return ((int)Math.Floor(val / (decimal)x)) * x;
         }
 
-        private void CalculateDateValues(DateTime dateTime)
+        protected async Task HandleDateKeydownAsync(KeyboardEventArgs args, DateTime date)
+        {
+            switch (args.Key)
+            {
+                case "ArrowUp":
+                    CurrentViewDate = date.AddDays(-7);
+                    break;
+                case "ArrowDown":
+                    CurrentViewDate = date.AddDays(7);
+                    break;
+                case "ArrowLeft":
+                    CurrentViewDate = date.AddDays(-1);
+                    break;
+                case "ArrowRight":
+                    CurrentViewDate = date.AddDays(1);
+                    break;
+                case "Enter":
+                    SelectedDate = date.Date;
+                    break;
+                default:
+                    break;
+            }
+
+            if (CurrentViewDate > DateTime.Parse($"{CurrentViewDate.Month}-{CurrentViewDate.Month:D2}-01").AddMonths(1)
+                || CurrentViewDate < DateTime.Parse($"{CurrentViewDate.Month}-{CurrentViewDate.Month:D2}-01"))
+            {
+                SetDatesInView(currentViewDate);
+            }
+
+            var index = DatesInView.IndexOf(CurrentViewDate);
+            await buttonRefs[index].ElementRef.FocusAsync();
+
+            StateHasChanged();
+        }
+
+        private void SetDatesInView(DateTime dateTime)
         {
             var datesInMonth = Enumerable.Range(1, DateTime.DaysInMonth(dateTime.Year, dateTime.Month))
                                          .Select(d => new DateTime(dateTime.Year, dateTime.Month, d))
@@ -148,7 +192,17 @@ namespace BlazoriseCalendarComponent
             var prevDays = Enumerable.Range(1, firstDayOfMonth - 1).Select(d => new DateTime(datesInMonth.Min().AddDays(d - firstDayOfMonth).Ticks));
             var postDays = Enumerable.Range(1, 42 - datesInMonth.Count - prevDays.Count())
                                      .Select(d => new DateTime(datesInMonth.Max().AddDays(d).Ticks));
-            DatesInMonth = prevDays.Concat(datesInMonth).Concat(postDays).ToList();
+            
+            DatesInView = prevDays.Concat(datesInMonth).Concat(postDays).ToList();
+        }
+
+        private string DateClass(DateTime date)
+        {
+            string dateClass = "calendar-day";
+            string selectedDate = SelectedDate.Equals(date.Date) || SelectedDates.Contains(date.Date) ? "selected-date" : "";
+            string focus = CurrentViewDate.Equals(date.Date) ? "focus" : "";
+
+            return string.Join(" ", dateClass, selectedDate, focus);
         }
     }
 }
