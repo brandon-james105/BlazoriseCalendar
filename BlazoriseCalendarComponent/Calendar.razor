@@ -228,14 +228,15 @@
                         @{ var date = DatesInView.ElementAt(i); }
                         <Button @ref="@buttonRefs[i]"
                                 Class="@DateClass(date)"
-                                Color="SelectedDate.Equals(date.Date) || SelectedDates.Contains(date.Date) ? Color.Primary : Color.Default"
+                                Color="@DateColor(date)"
                                 TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
                                 Size="Size.Small"
                                 Border="Border.Is0"
                                 Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
                                 Clicked="() => DateClicked(date.Date)"
                                 TabIndex="DatesInView.IndexOf(date)"
-                                @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeydownAsync(args, date.Date)">
+                                @onkeyup="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)"
+                                @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)">
                             @date.Day
                         </Button>
                     </Repeater>

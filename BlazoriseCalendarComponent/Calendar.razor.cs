@@ -1,18 +1,15 @@
 ﻿using Blazorise;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.JSInterop;
 
 namespace BlazoriseCalendarComponent
 {
     public partial class Calendar : ComponentBase
     {
+        [Inject]
+        public IJSRuntime? JSRuntime { get; set; }
+
         private DateTime selectedDate;
 
         [Parameter]
@@ -73,6 +70,8 @@ namespace BlazoriseCalendarComponent
 
         private Dictionary<int, Button> buttonRefs = new();
 
+        private ISet<string> KeysPressed = new HashSet<string>();
+
         protected override void OnInitialized()
         {
             SelectedDate = DateTime.Today;
@@ -80,6 +79,19 @@ namespace BlazoriseCalendarComponent
             SetMonthView(CurrentViewDate);
 
             base.OnInitialized();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                foreach (var button in buttonRefs)
+                {
+                    await JSRuntime?.ThrottleEvent(button.Value.ElementRef, "keydown", TimeSpan.FromMilliseconds(125));
+                }
+            }
+
+            await base.OnAfterRenderAsync(firstRender);
         }
 
         protected void SetMonthView(DateTime dateTime, bool select = false)
@@ -102,10 +114,16 @@ namespace BlazoriseCalendarComponent
             CurrentView = calendarView;
             CurrentViewDate = new DateTime(year, month, day);
             SetDatesInView(CurrentViewDate);
-            
+
             if (select)
             {
+                if (SelectionMode == CalendarSelectionMode.Multiple)
+                {
+                    SelectedDates.Clear();
+                }
+
                 SelectedDate = CurrentViewDate;
+                SelectedDates.Add(SelectedDate);
             }
 
             StateHasChanged();
@@ -149,27 +167,66 @@ namespace BlazoriseCalendarComponent
             return ((int)Math.Floor(val / (decimal)x)) * x;
         }
 
-        protected async Task HandleDateKeydownAsync(KeyboardEventArgs args, DateTime date)
+        protected async Task HandleDateKeypressAsync(KeyboardEventArgs args, DateTime date)
         {
-            switch (args.Key)
+            var repeatableKeys = new List<string>()
             {
-                case "ArrowUp":
-                    CurrentViewDate = date.AddDays(-7);
-                    break;
-                case "ArrowDown":
-                    CurrentViewDate = date.AddDays(7);
-                    break;
-                case "ArrowLeft":
-                    CurrentViewDate = date.AddDays(-1);
-                    break;
-                case "ArrowRight":
-                    CurrentViewDate = date.AddDays(1);
-                    break;
-                case "Enter":
-                    SelectedDate = date.Date;
-                    break;
-                default:
-                    break;
+                "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"
+            };
+
+            if (args.Repeat && !repeatableKeys.Contains(args.Key))
+            {
+                return;
+            }
+
+            if (args.Type == "keydown")
+            {
+                if (!KeysPressed.Contains(args.Key))
+                {
+                    KeysPressed.Add(args.Key);
+                }
+
+                switch (args.Key)
+                {
+                    case "ArrowUp":
+                        CurrentViewDate = date.AddDays(-7);
+                        break;
+                    case "ArrowDown":
+                        CurrentViewDate = date.AddDays(7);
+                        break;
+                    case "ArrowLeft":
+                        if (KeysPressed.Contains("Control"))
+                        {
+                            DecrementMonth();
+                        }
+                        else
+                        {
+                            CurrentViewDate = date.AddDays(-1);
+                        }
+                        break;
+                    case "ArrowRight":
+                        if (KeysPressed.Contains("Control"))
+                        {
+                            IncrementMonth();
+                        }
+                        else
+                        {
+                            CurrentViewDate = date.AddDays(1);
+                        }
+                        break;
+                    case "Enter":
+                        SelectedDate = date.Date;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (args.Type == "keyup")
+            {
+                if (KeysPressed.Contains(args.Key))
+                {
+                    KeysPressed.Remove(args.Key);
+                }
             }
 
             if (CurrentViewDate > DateTime.Parse($"{CurrentViewDate.Month}-{CurrentViewDate.Month:D2}-01").AddMonths(1)
@@ -186,8 +243,46 @@ namespace BlazoriseCalendarComponent
 
         protected void DateClicked(DateTime dateTime)
         {
-            SelectedDate = dateTime;
-            CurrentViewDate = SelectedDate;
+            if (SelectionMode == CalendarSelectionMode.Single)
+            {
+                SelectedDate = dateTime;
+                CurrentViewDate = SelectedDate;
+            }
+
+            if (SelectionMode == CalendarSelectionMode.Multiple)
+            {
+                if (KeysPressed.Contains("Control"))
+                {
+                    if (!SelectedDates.Add(dateTime))
+                    {
+                        SelectedDates.Remove(dateTime);
+                    }
+                }
+                else if (KeysPressed.Contains("Shift"))
+                {
+                    var dateRange = new List<DateTime>();
+
+                    if (dateTime < SelectedDates.Last())
+                    {
+                        dateRange = DatesInView.Where(d => d <= SelectedDates.Last() && d >= dateTime).ToList();
+                    }
+                    else
+                    {
+                        dateRange = DatesInView.Where(d => d >= SelectedDates.Last() && d <= dateTime).ToList();
+                    }
+
+                    foreach (var date in dateRange)
+                    {
+                        SelectedDates.Add(date);
+                    }
+                }
+                else
+                {
+                    SelectedDates.Clear();
+                    SelectedDates.Add(dateTime);
+                }
+            }
+
             SetDatesInView(selectedDate);
         }
 
@@ -207,6 +302,7 @@ namespace BlazoriseCalendarComponent
             {
                 DatesInView = datesToSet;
             }
+            StateHasChanged();
         }
 
         private string DateClass(DateTime date)
@@ -216,6 +312,22 @@ namespace BlazoriseCalendarComponent
             string focus = CurrentViewDate.Equals(date.Date) ? "focus" : "";
 
             return string.Join(" ", dateClass, selectedDate, focus);
+        }
+
+        private Color DateColor(DateTime date)
+        {
+            if (SelectionMode == CalendarSelectionMode.Single)
+            {
+                return SelectedDate.Equals(date.Date) ? Color.Primary : Color.Default;
+            }
+
+            if (SelectionMode == CalendarSelectionMode.Multiple || SelectionMode == CalendarSelectionMode.Range)
+            {
+                return SelectedDates.Contains(date.Date) ? Color.Primary : Color.Default;
+            }
+
+            return Color.Default;
+            
         }
     }
 }
