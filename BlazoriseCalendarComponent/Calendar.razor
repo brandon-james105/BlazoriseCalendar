@@ -37,6 +37,10 @@
                 color: #000 !important;
             }
 
+            .month-view .month-body .calendar-day.btn.in-range {
+                background-color: rgba(45, 122, 255, 0.25) !important;
+            }
+
         .month-view .month-body .calendar-day:not(.selected-date):hover {
             background: rgba(0, 0, 0, 0.25);
         }
@@ -227,11 +231,11 @@
                     <Repeater Items="Enumerable.Range(0, 42)" Context="i">
                         @{ var date = DatesInView.ElementAt(i); }
                         <Button @ref="@buttonRefs[i]"
+                                Size="Size.Small"
                                 Class="@DateClass(date)"
                                 Color="@DateColor(date)"
+                                Border="@DateBorder(date)"
                                 TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
-                                Size="Size.Small"
-                                Border="Border.Is0"
                                 Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
                                 Clicked="() => DateClicked(date.Date)"
                                 TabIndex="DatesInView.IndexOf(date)"
