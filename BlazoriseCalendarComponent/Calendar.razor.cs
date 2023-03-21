@@ -256,7 +256,7 @@ namespace BlazoriseCalendarComponent
                         }
                         break;
                     case "Enter":
-                        HandleSelection(date);
+                        await HandleSelection(date);
                         break;
                     default:
                         break;
@@ -282,13 +282,13 @@ namespace BlazoriseCalendarComponent
             StateHasChanged();
         }
 
-        protected void DateClicked(DateTime date)
+        protected async Task DateClicked(DateTime date)
         {
-            HandleSelection(date);
-            SetDatesInView(CurrentViewDate);
+            SetDatesInView(date);
+            await HandleSelection(date);
         }
 
-        private void HandleSelection(DateTime date)
+        private async Task HandleSelection(DateTime date)
         {
             CurrentViewDate = date;
 
@@ -357,6 +357,9 @@ namespace BlazoriseCalendarComponent
                     }
                 }
             }
+
+            var index = DatesInView.IndexOf(CurrentViewDate);
+            await buttonRefs[index].ElementRef.FocusAsync();
         }
 
         private void SetDatesInView(DateTime dateTime)
@@ -364,6 +367,7 @@ namespace BlazoriseCalendarComponent
             var datesInMonth = Enumerable.Range(1, DateTime.DaysInMonth(dateTime.Year, dateTime.Month))
                                          .Select(d => new DateTime(dateTime.Year, dateTime.Month, d))
                                          .ToList();
+
             var firstDayOfMonth = Array.IndexOf(Enum.GetValues(typeof(DayOfWeek)), datesInMonth.Min().DayOfWeek) + 1;
             var prevDays = Enumerable.Range(1, firstDayOfMonth - 1).Select(d => new DateTime(datesInMonth.Min().AddDays(d - firstDayOfMonth).Ticks));
             var postDays = Enumerable.Range(1, 42 - datesInMonth.Count - prevDays.Count())

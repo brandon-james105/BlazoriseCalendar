@@ -231,14 +231,14 @@
                     <Repeater Items="Enumerable.Range(0, 42)" Context="i">
                         @{ var date = DatesInView.ElementAt(i); }
                         <Button @ref="@buttonRefs[i]"
+                                TabIndex="i"
                                 Size="Size.Small"
                                 Class="@DateClass(date)"
                                 Color="@DateColor(date)"
                                 Border="@DateBorder(date)"
                                 TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
                                 Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
-                                Clicked="() => DateClicked(date.Date)"
-                                TabIndex="DatesInView.IndexOf(date)"
+                                Clicked="async () => await DateClicked(date.Date)"
                                 @onkeyup="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)"
                                 @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)">
                             @date.Day
