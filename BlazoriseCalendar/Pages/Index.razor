@@ -1,9 +1,9 @@
 ﻿@page "/"
 
 <Container Flex="Flex.JustifyContent.Center.AlignItems.Center" Class="vw-100 vh-100">
-    <Calendar @bind-SelectedDate="SelectedDate" SelectionMode="CalendarSelectionMode.Multiple" />
+    <Calendar @bind-Date="Date" SelectionMode="CalendarSelectionMode.Multiple" />
 </Container>
 
 @code {
-    public DateTime? SelectedDate { get; set; } = DateTime.Today;
+    public DateTime? Date { get; set; } = DateTime.Today;
 }
