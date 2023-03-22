@@ -38,6 +38,7 @@
             }
 
             .month-view .month-body .calendar-day.btn.in-range {
+                border-radius: 0;
                 background-color: rgba(45, 122, 255, 0.25) !important;
             }
 
@@ -237,7 +238,7 @@
                                 Size="Size.Small"
                                 Class="@DateClass(date)"
                                 Color="@DateColor(date)"
-                                Border="@DateBorder(date)"
+                                Border="Border.Is0"
                                 TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
                                 Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
                                 Clicked="async () => await DateClicked(date.Date)"

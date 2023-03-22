@@ -377,30 +377,19 @@ namespace BlazoriseCalendarComponent
             }
             if (SelectionMode == CalendarSelectionMode.Range)
             {
-                if (RangeStart != null && RangeEnd != null)
+                if (RangeStart == null)
                 {
-                    var distanceFromStart = Math.Abs(RangeStart.Value.Subtract(date).Ticks);
-                    var distanceFromEnd = Math.Abs(RangeEnd.Value.Subtract(date).Ticks);
-
-                    if (distanceFromStart < distanceFromEnd) { RangeStart = date; }
-                    else { RangeEnd = date; }
+                    RangeStart = date;
                 }
                 else
                 {
-                    if (RangeStart == null)
-                    {
-                        RangeStart = date;
-                    }
+                    RangeEnd = RangeStart == date ? null : date;
+                }
 
-                    if (date < RangeStart)
-                    {
-                        RangeStart = date;
-                    }
-
-                    if (RangeStart != null)
-                    {
-                        RangeEnd = date;
-                    }
+                if (date < RangeStart)
+                {
+                    RangeStart = date;
+                    RangeEnd = null;
                 }
             }
 
@@ -437,21 +426,24 @@ namespace BlazoriseCalendarComponent
                                     || Date.Equals(date.Date)
                                     || SelectedDates.Contains(date.Date) ? "selected-date" : "";
             string focus = CurrentViewDate.Equals(date.Date) ? "focus" : "";
-            string inRange = SelectionMode == CalendarSelectionMode.Range && date > RangeStart && date < RangeEnd ? "in-range" : "";
+            string inRange = "";
+
+            if (SelectionMode == CalendarSelectionMode.Range)
+            {
+                if (RangeStart != null && RangeEnd != null)
+                {
+                    inRange = date > RangeStart && date < RangeEnd ? "in-range" : "";
+                }
+                
+                if (RangeStart != null && RangeEnd == null)
+                {
+                    inRange = date > RangeStart && date < RangeSelectHoveredDate ? "in-range" : "";
+                }
+            }
 
             ISet<string> classes = new HashSet<string>() { dateClass, selectedDate, focus, inRange };
 
             return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
-        }
-
-        private IFluentBorder DateBorder(DateTime date)
-        {
-            if (SelectionMode == CalendarSelectionMode.Range && date > RangeStart && date < RangeEnd)
-            {
-                return Border.Is0.RoundedZero;
-            }
-
-            return Border.Is0;
         }
 
         private Color DateColor(DateTime date)
