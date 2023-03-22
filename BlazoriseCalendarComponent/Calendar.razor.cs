@@ -381,15 +381,28 @@ namespace BlazoriseCalendarComponent
                 {
                     RangeStart = date;
                 }
-                else
+                else if (RangeStart != null && RangeEnd != null)
                 {
-                    RangeEnd = RangeStart == date ? null : date;
+                    if (date < RangeEnd && date > RangeStart)
+                    {
+                        RangeStart = date;
+                    }
+                    else
+                    {
+                        RangeStart = date;
+                        RangeEnd = null;
+                    }
                 }
-
-                if (date < RangeStart)
+                else if (RangeStart != null)
                 {
-                    RangeStart = date;
-                    RangeEnd = null;
+                    if (date < RangeStart)
+                    {
+                        RangeStart = date;
+                    }
+                    else if (date > RangeStart)
+                    {
+                        RangeEnd = date;
+                    }
                 }
             }
 

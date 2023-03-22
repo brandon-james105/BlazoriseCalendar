@@ -1,7 +1,7 @@
 ﻿@page "/"
 
 <Container Flex="Flex.JustifyContent.Center.AlignItems.Center" Class="vw-100 vh-100">
-    <Calendar @bind-Date="Date" />
+    <Calendar @bind-Date="Date" SelectionMode="CalendarSelectionMode.Range" />
 </Container>
 
 @code {
