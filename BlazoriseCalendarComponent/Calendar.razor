@@ -229,8 +229,11 @@
                         </Div>
                     </Repeater>
                     <Repeater Items="Enumerable.Range(0, 42)" Context="i">
-                        @{ var date = DatesInView.ElementAt(i); controlCount++; }
-                        <Button @ref="@buttonRefs[controlCount]"
+                        @{
+                            var date = DatesInView.ElementAt(i);
+                            var controlCountInstance = controlCount;
+                        }
+                        <Button @ref="@buttonRefs[controlCountInstance]"
                                 Size="Size.Small"
                                 Class="@DateClass(date)"
                                 Color="@DateColor(date)"
@@ -244,6 +247,7 @@
                                 @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)">
                             @date.Day
                         </Button>
+                        @{ controlCount++; }
                     </Repeater>
                 </Div>
             </Div>
