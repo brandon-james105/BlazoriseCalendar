@@ -229,9 +229,8 @@
                         </Div>
                     </Repeater>
                     <Repeater Items="Enumerable.Range(0, 42)" Context="i">
-                        @{ var date = DatesInView.ElementAt(i); }
-                        <Button @ref="@buttonRefs[i]"
-                                TabIndex="i"
+                        @{ var date = DatesInView.ElementAt(i); controlCount++; }
+                        <Button @ref="@buttonRefs[controlCount]"
                                 Size="Size.Small"
                                 Class="@DateClass(date)"
                                 Color="@DateColor(date)"

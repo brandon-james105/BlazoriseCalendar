@@ -2,12 +2,16 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
-using System;
 
 namespace BlazoriseCalendarComponent
 {
     public partial class Calendar : ComponentBase
     {
+        /// <summary>
+        /// Keeps track of how many controls are in play across the instances of calendar components
+        /// </summary>
+        private static int controlCount = 0;
+
         [Inject]
         public IJSRuntime? JSRuntime { get; set; }
 
@@ -22,7 +26,7 @@ namespace BlazoriseCalendarComponent
                 if (selectedDate == value) return;
                 selectedDate = value;
                 DateChanged?.InvokeAsync(value);
-                ValueChanged?.InvokeAsync(value.Value);
+                ValueChanged?.InvokeAsync(value);
             }
         }
 
@@ -30,7 +34,7 @@ namespace BlazoriseCalendarComponent
         public EventCallback<DateTime?>? DateChanged { get; set; }
 
         [Parameter]
-        public EventCallback<DateTime>? ValueChanged { get; set; }
+        public EventCallback<DateTime?>? ValueChanged { get; set; }
 
         private DateTime currentViewDate;
 
@@ -43,6 +47,7 @@ namespace BlazoriseCalendarComponent
                 if (currentViewDate == value) return;
                 currentViewDate = value;
                 CurrentViewDateChanged?.InvokeAsync(value);
+                StateHasChanged();
             }
         }
 
@@ -79,6 +84,7 @@ namespace BlazoriseCalendarComponent
                 RangeEnd = null;
                 RangeSelectHoveredDate = null;
                 Date = null;
+                StateHasChanged();
             }
         }
 
@@ -97,6 +103,7 @@ namespace BlazoriseCalendarComponent
                 {
                     rangeStart = value;
                     RangeStartChanged?.InvokeAsync(value);
+                    StateHasChanged();
                 }
             }
         }
@@ -116,6 +123,7 @@ namespace BlazoriseCalendarComponent
                 {
                     rangeEnd = value;
                     RangeEndChanged?.InvokeAsync(value);
+                    StateHasChanged();
                 }
             }
         }
@@ -131,7 +139,7 @@ namespace BlazoriseCalendarComponent
 
         private Dictionary<int, Button> buttonRefs = new();
 
-        private ISet<string> KeysPressed = new HashSet<string>();
+        private ISet<string> keysPressed = new HashSet<string>();
 
         protected override void OnInitialized()
         {
@@ -260,9 +268,9 @@ namespace BlazoriseCalendarComponent
 
             if (args.Type == "keydown")
             {
-                if (!KeysPressed.Contains(args.Key))
+                if (!keysPressed.Contains(args.Key))
                 {
-                    KeysPressed.Add(args.Key);
+                    keysPressed.Add(args.Key);
                 }
 
                 switch (args.Key)
@@ -274,7 +282,7 @@ namespace BlazoriseCalendarComponent
                         CurrentViewDate = date.AddDays(7);
                         break;
                     case "ArrowLeft":
-                        if (KeysPressed.Contains("Control"))
+                        if (keysPressed.Contains("Control"))
                         {
                             DecrementMonth();
                         }
@@ -284,7 +292,7 @@ namespace BlazoriseCalendarComponent
                         }
                         break;
                     case "ArrowRight":
-                        if (KeysPressed.Contains("Control"))
+                        if (keysPressed.Contains("Control"))
                         {
                             IncrementMonth();
                         }
@@ -302,9 +310,9 @@ namespace BlazoriseCalendarComponent
             }
             else if (args.Type == "keyup")
             {
-                if (KeysPressed.Contains(args.Key))
+                if (keysPressed.Contains(args.Key))
                 {
-                    KeysPressed.Remove(args.Key);
+                    keysPressed.Remove(args.Key);
                 }
             }
 
@@ -336,14 +344,14 @@ namespace BlazoriseCalendarComponent
             }
             if (SelectionMode == CalendarSelectionMode.Multiple)
             {
-                if (KeysPressed.Contains("Control"))
+                if (keysPressed.Contains("Control"))
                 {
                     if (!SelectedDates.Add(date))
                     {
                         SelectedDates.Remove(date);
                     }
                 }
-                else if (KeysPressed.Contains("Shift"))
+                else if (keysPressed.Contains("Shift"))
                 {
                     var dateRange = new List<DateTime>();
 
