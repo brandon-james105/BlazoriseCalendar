@@ -37,10 +37,10 @@
                 color: #000 !important;
             }
 
-            .month-view .month-body .calendar-day.btn.in-range {
-                border-radius: 0;
-                background-color: rgba(45, 122, 255, 0.25) !important;
-            }
+        .month-view .month-body .calendar-day.btn.in-range {
+            border-radius: 0;
+            background-color: rgba(45, 122, 255, 0.25) !important;
+        }
 
         .month-view .month-body .calendar-day:not(.selected-date):hover {
             background: rgba(0, 0, 0, 0.25);
@@ -83,8 +83,8 @@
                      Flex="Flex.JustifyContent.Between"
                      Margin="Margin.Is3.FromBottom">
                     <Button TextWeight="TextWeight.Bold" Padding="Padding.Is1">@($"{RoundByX(CurrentViewDate.Year)} - {RoundByX(CurrentViewDate.Year + 10)}")</Button>
-                    <Div>
-                        <Button Clicked="() => DecrementYear(10)"
+                        <Div>
+                            <Button Clicked="() => DecrementYear(10)"
                                 Size="Size.Small"
                                 Border="Border.Is0"
                                 TextColor="TextColor.Dark"
@@ -190,7 +190,14 @@
                     <Button Padding="Padding.Is1"
                             TextWeight="TextWeight.Bold"
                             Clicked="() => View = CalendarView.Year">
-                        @CurrentViewDate.ToString("MMMM yyyy")
+                        @if (Views > 1)
+                        {
+                            @($"{CurrentViewDate:MMMM yyyy} - {CurrentViewDate.AddMonths(Views - 1):MMMM yyyy}")
+                        }
+                        else
+                        {
+                            @CurrentViewDate.ToString("MMMM yyyy")
+                        }
                     </Button>
                     <Div>
                         <Button Clicked="DecrementMonth"
@@ -205,7 +212,9 @@
                         <Button Clicked="() => SetMonthView(DateTime.Today, true)"
                                 Border="Border.Is0"
                                 TextColor="TextColor.Primary"
-                                Size="Size.Small">Today</Button>
+                                Size="Size.Small">
+                            Today
+                        </Button>
                         <Button Clicked="IncrementMonth"
                                 Size="Size.Small"
                                 Border="Border.Is0"
@@ -217,38 +226,46 @@
                         </Button>
                     </Div>
                 </Div>
-                <Div Class="month-body">
-                    <Repeater TItem="DayOfWeek"
-                              Items="Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>()"
-                              Context="dayOfWeek">
-                        <Div Class="calendar-dow"
-                             Margin="Margin.Is2.FromBottom"
-                             TextColor="TextColor.Muted"
-                             TextAlignment="TextAlignment.Center"
-                             TextTransform="TextTransform.Uppercase">
-                            @dayOfWeek.ToString().First()
+                <Div Flex="CalendarFlex()"
+                     Gap="Views > 1 ? Gap.Is3 : null"
+                     Class="calendars">
+                    <Repeater Items="Enumerable.Range(0, Views)" Context="view">
+                        <Div Class="month-body">
+                            <Repeater TItem="DayOfWeek"
+                                      Items="Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>()"
+                                      Context="dayOfWeek">
+                                <Div Class="calendar-dow"
+                                     Margin="Margin.Is2.FromBottom"
+                                     TextColor="TextColor.Muted"
+                                     TextAlignment="TextAlignment.Center"
+                                     TextTransform="TextTransform.Uppercase">
+                                    @dayOfWeek.ToString().First()
+                                </Div>
+                            </Repeater>
+                            <Repeater Items="Enumerable.Range(0, totalDatesInView)" Context="i">
+                                @{
+                                    var date = DatesInView.ElementAt(i + (view * totalDatesInView));
+                                    var controlCountInstance = controlCount;
+                                }
+                                <Button @ref="@buttonRefs[controlCountInstance]"
+                                        Size="Size.Small"
+                                        Class="@DateClass(date)"
+                                        Color="@DateColor(date)"
+                                        TextColor="@DateTextColor(date, i)"
+                                        Border="Border.Is0"
+                                        Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
+                                        Clicked="async () => await DateClicked(date.Date)"
+                                        @onmouseenter="(MouseEventArgs args) => HandleDateMouseEnter(args, date)"
+                                        @onmouseleave="(MouseEventArgs args) => HandleDateMouseLeave(args, date)"
+                                        @onkeyup="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)"
+                                        @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)">
+                                    @date.Day
+                                </Button>
+                                @{
+                                    controlCount++;
+                                }
+                            </Repeater>
                         </Div>
-                    </Repeater>
-                    <Repeater Items="Enumerable.Range(0, 42)" Context="i">
-                        @{
-                            var date = DatesInView.ElementAt(i);
-                            var controlCountInstance = controlCount;
-                        }
-                        <Button @ref="@buttonRefs[controlCountInstance]"
-                                Size="Size.Small"
-                                Class="@DateClass(date)"
-                                Color="@DateColor(date)"
-                                Border="Border.Is0"
-                                TextColor="CurrentViewDate.Month == date.Month ? TextColor.Default : TextColor.Muted"
-                                Disabled="MinDate > date || MaxDate < date || DisabledDates.Contains(date)"
-                                Clicked="async () => await DateClicked(date.Date)"
-                                @onmouseenter="(MouseEventArgs args) => HandleDateMouseEnter(args, date)"
-                                @onmouseleave="(MouseEventArgs args) => HandleDateMouseLeave(args, date)"
-                                @onkeyup="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)"
-                                @onkeydown="async (KeyboardEventArgs args) => await HandleDateKeypressAsync(args, date.Date)">
-                            @date.Day
-                        </Button>
-                        @{ controlCount++; }
                     </Repeater>
                 </Div>
             </Div>
